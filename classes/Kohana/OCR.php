@@ -4,123 +4,54 @@ defined('SYSPATH') OR die('No direct access allowed.');
 
 abstract class Kohana_OCR
 {
+
     // OCR default
-    public static $default = 'tesseract';
-
-    /**
-     * @var  array  OCR instances
-     */
-    public static $instances = array();
-
-    protected $_image;
-    protected $_output;
+    public static $default_driver = 'tesseract';
+    public $file;
     protected $_is_cached = FALSE;
     protected $_cache_life = NULL;
 
-
-    /**
-     * Singleton pattern
-     *
-     * @return OCR
-     */
-    public static function instance($group = NULL)
+    public static function factory($file, $driver = NULL)
     {
-        // If there is no group supplied
-        if ($group === NULL)
+        if ($driver === NULL)
         {
-            // Use the default setting
-            $group = OCR::$default;
+            // Use the driver from configuration file or default one
+            $configured_driver = Kohana::$config->load('ocr.default_driver');
+            $driver = ($configured_driver) ? $configured_driver : OCR::$default_driver;
         }
 
-        if (isset(OCR::$instances[$group]))
+        // Set the class name
+        $class = 'OCR_' . $driver;
+
+        return new $class($file);
+    }
+
+    protected function __construct($file)
+    {
+        try
         {
-            // Return the current group if initiated already
-            return OCR::$instances[$group];
+            // Get the real path to the file
+            $file = realpath($file);
+
+            // Get the image information
+            $info = getimagesize($file);
+        } catch (Exception $e)
+        {
+            // Ignore all errors while reading the image
         }
 
-        $config = Kohana::$config->load('ocr');
-
-        if (!$config->offsetExists($group))
+        if (empty($file) OR empty($info))
         {
-            throw new Kohana_Exception(
-            'Failed to load Kohana OCR group: :group', array(':group' => $group)
-            );
+            throw new OCR_Exception('Not an image or invalid image: :file', array(':file' => Debug::path($file)));
         }
 
-        $config = $config->get($group);
-
-        // Create a new OCR type instance
-        $class = 'OCR_' . ucfirst($config['driver']);
-        OCR::$instances[$group] = new $class($config);
-
-        // Return the instance
-        return OCR::$instances[$group];
+        // Store the image information
+        $this->file = $file;
     }
 
-    protected $_config = array();
-
-    /**
-     * Ensures singleton pattern is observed
-     *
-     * @param  array  $config  configuration
-     */
-    protected function __construct(array $config)
-    {
-        $this->config($config);
-    }
-
-    /**
-     * Getter and setter for the configuration. If no argument provided, the
-     * current configuration is returned. Otherwise the configuration is set
-     * to this class.
-     *
-     *     // Overwrite all configuration
-     *     $ocr->config(array('driver' => 'native', '...'));
-     *
-     *     // Set a new configuration setting
-     *     $ocr->config('extocr', array(
-     *          'foo' => 'bar',
-     *          '...'
-     *          ));
-     *
-     * @param   mixed    key to set to array, either array or config path
-     * @param   mixed    value to associate with key
-     * @return  mixed
-     */
-    public function config($key = NULL, $value = NULL)
-    {
-        if ($key === NULL)
-            return $this->_config;
-
-        if (is_array($key))
-        {
-            $this->_config = $key;
-        } else
-        {
-            if ($value === NULL)
-                return Arr::get($this->_config, $key);
-
-            $this->_config[$key] = $value;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Overload the __clone() method to prevent cloning
-     *
-     * @return  void
-
-     */
-    final public function __clone()
-    {
-        throw new Kohana_Exception('Cloning of Kohana_OCR objects is forbidden');
-    }
-
-    abstract public function from($image);
-    abstract public function cached($lifetime=NULL);
+    abstract public function cached($lifetime = NULL);
     abstract public function execute();
-
+    abstract public function save($file);
 }
 
 // End OCR

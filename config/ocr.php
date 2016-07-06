@@ -3,8 +3,9 @@
 defined('SYSPATH') or die('No direct access allowed.');
 
 return array(
+    'default_driver' => 'tesseract',
+    
     'tesseract' => array(
-        'driver' => 'tesseract',
         'executable' => 'tesseract',
         'temp_dir' => APPPATH . 'tmp',
     ),

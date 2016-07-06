@@ -8,13 +8,35 @@ You must install Tesseract OCR as external process.
 
 ## Example:
 
+Simple execution:
+
 ```php
-        $result = OCR::instance()
-            ->from(APPPATH . 'tmp'. DIRECTORY_SEPARATOR . 'test.png')
-            ->cached()
+        $file = APPPATH . 'tmp'. DIRECTORY_SEPARATOR . 'test.png';
+        $result = OCR::factory($file)
             ->execute();
 
-        echo Debug::vars($result);
+        echo $result;
+```
+
+Execute using 1 day caching results:
+
+```php
+        $file = APPPATH . 'tmp'. DIRECTORY_SEPARATOR . 'test.png';
+        $result = OCR::factory($file)
+            ->cached(86400)
+            ->execute();
+
+        echo $result;
+```
+
+Execute and save text file:
+
+```php
+        $infile = APPPATH . 'tmp'. DIRECTORY_SEPARATOR . 'test.png';
+        $outfile = APPPATH . 'tmp'. DIRECTORY_SEPARATOR . 'test.txt';
+        $result = OCR::factory($infile)
+            ->execute()
+            ->save($outfile);
 ```
 
 ## Config
@@ -23,8 +45,9 @@ ocr.php
 
 ```php
 return array(
+    'default_driver' => 'tesseract',
+
     'tesseract' => array(
-        'driver' => 'tesseract',
         'executable' => 'tesseract',
         'temp_dir' => APPPATH . 'tmp',
     ),

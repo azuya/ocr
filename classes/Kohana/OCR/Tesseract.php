@@ -6,7 +6,7 @@ class Kohana_OCR_Tesseract extends OCR
     private $_temp_dir;
     private $_outname;
 
-    private $_result = NULL;
+    private $_result = '';
 
     /**
      * Create a new [OCR_Tesseract].
@@ -80,7 +80,7 @@ class Kohana_OCR_Tesseract extends OCR
         }
 
         // get data if caching is disabled
-        $result = $this->_shell_execute();
+        $this->_result = $this->_shell_execute();
         return $this;
     }
 
